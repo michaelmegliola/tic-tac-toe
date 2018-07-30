@@ -2,11 +2,13 @@ import numpy as np
 
 class Board:
     def __init__(self, x_player, o_player):
-        self.board = np.zeros([3,3])
-        self.moves = 0
         self.x_player = x_player
         self.o_player = o_player
 
+    def reset(self):
+        self.board = np.zeros([3,3])
+        self.moves = 0
+        
     # returns the max and min of sum of each axis + each diagonal
     def max_min(self):
         col_sum = np.sum(self.board,0)
@@ -27,8 +29,8 @@ class Board:
         else:
             return 0
 
-    def game_over(self):
-        return self.winner() != 0 or self.moves == 9
+    def game_over(self, winner):
+        return winner != 0 or self.moves == 9
 
     # record a move; return reward with respect to ai player
     def move(self, action, player):
@@ -39,6 +41,7 @@ class Board:
             self.moves += 1
         else:
             raise ValueError("Illegal move.")
+        return self.winner()
 
     def is_empty(self, row_col):
         return self.board[row_col // 3,row_col % 3] == 0
@@ -61,18 +64,26 @@ class Board:
         return int(i)
 
     def play(self, verbose=False):
-        while not self.game_over():
+        self.reset()
+        winner = 0
+        while not self.game_over(winner):
             x_state = self.state()
-            self.move(self.x_player.move(self, x_state),1)
+            try:
+                winner = self.move(self.x_player.move(self, x_state),1)
+            except ValueError:
+                winner = -1
             if verbose:
                 print(self)
-            if not self.game_over():
-                self.move(self.o_player.move(self, self.state()),-1)
+            if not self.game_over(winner):
+                try:
+                    winner = self.move(self.o_player.move(self, self.state()),-1)
+                except ValueError:
+                    winner = 1
                 if verbose:
                     print(self)
-            self.x_player.update(self, x_state, self.winner())
-            self.o_player.update(self, self.state(), -self.winner())
-            if verbose and self.game_over():
+            self.x_player.update(self, x_state, winner)
+            self.o_player.update(self, self.state(), -winner)
+            if verbose and self.game_over(winner):
                 print("WINNER = ", self.winner())
 
     def __str__(self):
