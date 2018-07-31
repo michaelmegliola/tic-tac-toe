@@ -9,6 +9,14 @@ class Board:
         self.board = np.zeros([3,3])
         self.moves = 0
         self.x_turn = True
+        try:
+            self.x_player.reset()
+        except BaseException:
+            pass
+        try:
+            self.y_player.reset()
+        except BaseException:
+            pass
 
     # returns the max and min of sum of each axis + each diagonal
     def max_min(self):
@@ -20,7 +28,7 @@ class Board:
         diag1 = np.flip(self.board,0).trace(0)
         return max(max(maxs), diag0, diag1), min(min(mins), diag0, diag1)
 
-    def move(self, action, player, verbose):
+    def move(self, action, player):
         n_player = 1 if player is self.x_player else -1
         row = action // 3
         col = action % 3
@@ -29,8 +37,6 @@ class Board:
             self.moves += 1
         else:
             raise ValueError("illegal move")
-        if verbose:
-            print(self)
         x,o = self.max_min()
         return x == 3 or o == -3
 
@@ -54,16 +60,14 @@ class Board:
                 i += (self.board[row][col] + 1) * (3 ** (row*3+col))
         return int(i)
 
-    def play(self, verbose=False):
+    def play(self):
         self.reset()
-        if verbose:
-            print('========= NEW GAME =======================')
         while self.moves < 9:
             player = self.x_player if self.x_turn else self.o_player
             opponent = self.o_player if self.x_turn else self.x_player
             state = self.state()
             try:
-                if self.move(player.move(self,state),player,verbose):
+                if self.move(player.move(self,state),player):
                     player.update(self,state,1)
                     opponent.update(self,state,-1)
                     break
