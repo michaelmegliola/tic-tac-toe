@@ -1,38 +1,38 @@
 import numpy as np
 
 class EmptyPlayer:
-    def move(self, board, state):
+    def move(self, game, state):
         pass
 
-    def update(self, board, state, reward):
+    def update(self, game, state, reward):
         pass
 
     def __str__(self):
         return 'I do nothing'
 
 class RandomPlayer:
-    def move(self, board, state):
+    def move(self, game, state):
         return board.sample()
 
-    def update(self, board, state, reward):
+    def update(self, game, state, reward):
         pass
 
     def __str__(self):
         return 'I make random moves'
 
 class HumanPlayer:
-    def move(self, board, state):
-        print(board)
+    def move(self, game, state):
+        print(game)
         return int(input())
 
-    def update(self, board, state, reward):
+    def update(self, game, state, reward):
         if reward != 0:
             print('Human player received a reward',reward)
 
     def __str__(self):
         return 'I am a human player'
 
-class Board:
+class Game:
     def __init__(self, x_player = EmptyPlayer(), o_player = EmptyPlayer()):
         self.x_player = x_player
         self.o_player = o_player
@@ -101,7 +101,8 @@ class Board:
             opponent = self.o_player if self.x_turn else self.x_player
             state = self.state(player)
             try:
-                if self.move(player.move(self,state),player):
+                m = player.move(self,state)
+                if self.move(m,player):
                     player.update(self,state,1)
                     opponent.update(self,state,-1)
                     break
