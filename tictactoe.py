@@ -78,7 +78,16 @@ class Board:
 
     def __str__(self):
         s = '------------------------------------------\n'
-        s += self.board.__str__()
+        for i in range(3):
+            for j in range(3):
+                if self.board[i][j] == 1:
+                    s += 'X'
+                elif self.board[i][j] == -1:
+                    s += 'O'
+                else:
+                    s += '-'
+                s += '  '
+            s += '\n\n'
         s += '\n------------------------------------------\n'
         return s
 
@@ -94,6 +103,7 @@ class RandomPlayer:
 
 class HumanPlayer:
     def move(self, board, state):
+        print(board)
         return int(input())
 
     def update(self, board, state, reward):
