@@ -66,7 +66,7 @@ class ProceduralPlayer:
                     game.board[row][col] = -self.n
                     max_min = game.max_min()
                     game.board[row][col] = 0
-                    if game.max_min()[1] == -self.n * 3:
+                    if max_min[1] == -self.n * 3:
                         return row * 3 + col
         return 0
         
@@ -80,6 +80,7 @@ class Game:
     def __init__(self, x_player = EmptyPlayer(), o_player = EmptyPlayer()):
         self.x_player = x_player
         self.o_player = o_player
+        self.i = 0
         self.reset()
         
     def reset(self):
@@ -140,6 +141,7 @@ class Game:
 
     def play(self):
         self.reset()
+        self.i+=1
         try:
             self.x_player.set_n(1)
         except:
