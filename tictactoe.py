@@ -1,6 +1,29 @@
 import numpy as np
 
-class EmptyPlayer:
+class BasePlayer:
+    def set_n(self,n):
+        self.n = n
+    
+    def reset_metrics(self):
+        self.wins = 0
+        self.losses = 0
+        self.ties = 0
+        
+    def record_outcome(self, outcome):
+        if outcome == self.n:
+            self.wins += 1
+        elif outcome == -self.n:
+            self.losses += 1
+        else:
+            self.ties += 1
+            
+    def reset(self):
+        pass
+            
+    def __str__(self):
+        return self.__class__.__name__         
+
+class EmptyPlayer(BasePlayer):
     def move(self, game, state):
         pass
 
@@ -10,9 +33,9 @@ class EmptyPlayer:
     def __str__(self):
         return 'I do nothing'
 
-class RandomPlayer:
+class RandomPlayer(BasePlayer):
     def move(self, game, state):
-        return board.sample()
+        return game.sample()
 
     def update(self, game, state, reward):
         pass
@@ -20,7 +43,7 @@ class RandomPlayer:
     def __str__(self):
         return 'I make random moves'
 
-class HumanPlayer:
+class HumanPlayer(BasePlayer):
     def move(self, game, state):
         print(game)
         return int(input())
@@ -32,12 +55,9 @@ class HumanPlayer:
     def __str__(self):
         return 'I am a human player'
 
-class ProceduralPlayer:    
+class ProceduralPlayer(BasePlayer):    
     def __init__(self):
         pass
-    
-    def set_n(self,n):
-        self.n = n
     
     def move(self, game, state):
         move = self.winning_move(game)
@@ -86,15 +106,9 @@ class Game:
     def reset(self):
         self.board = np.zeros([3,3])
         self.moves = 0
-        self.x_turn = True
-        try:
-            self.x_player.reset()
-        except BaseException:
-            pass
-        try:
-            self.y_player.reset()
-        except BaseException:
-            pass
+        self.x_turn = True     
+        self.x_player.reset() 
+        self.o_player.reset()
 
     # returns the max and min of sum of each axis + each diagonal
     def max_min(self):
@@ -106,6 +120,9 @@ class Game:
         diag1 = np.flip(self.board,0).trace(0)
         return max(max(maxs), diag0, diag1), min(min(mins), diag0, diag1)
 
+    def is_empty(self, action):
+        return self.board[action//3][action%3] == 0
+    
     def move(self, action, player):
         n_player = 1 if player is self.x_player else -1
         row = action // 3
@@ -141,29 +158,29 @@ class Game:
 
     def play(self):
         self.reset()
-        self.i+=1
-        try:
-            self.x_player.set_n(1)
-        except:
-            pass
-        try:
-            self.o_player.set_n(-1)
-        except:
-            pass
+        self.i+=1       
+        self.x_player.set_n(1)      
+        self.o_player.set_n(-1)
+
         while self.moves < 9:
             player = self.x_player if self.x_turn else self.o_player
             opponent = self.o_player if self.x_turn else self.x_player
             state = self.state(player)
+            winner = 0
             try:
                 m = player.move(self,state)
                 if self.move(m,player):
                     player.update(self,state,1)
                     opponent.update(self,state,-1)
+                    winner = player.n
                     break
             except ValueError:
                 player.update(self,state,-10)
+                winner = -player.n
                 break
             self.x_turn = not self.x_turn
+        self.x_player.record_outcome(winner)
+        self.o_player.record_outcome(winner)
 
     def __str__(self):
         s = '------------------------------------------\n'
