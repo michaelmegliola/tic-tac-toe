@@ -1,9 +1,13 @@
 import numpy as np
 
 class BasePlayer:
+    def __init__(self, display=False):
+        self.display = display
+        self.reset_metrics()
+    
     def set_n(self,n):
         self.n = n
-    
+        
     def reset_metrics(self):
         self.wins = 0
         self.losses = 0
@@ -21,7 +25,7 @@ class BasePlayer:
         pass
             
     def __str__(self):
-        return self.__class__.__name__         
+        return self.__class__.__name__ + ' w/l/t=' + str(self.wins) + '/' + str(self.losses) + '/' + str(self.ties)       
 
 class EmptyPlayer(BasePlayer):
     def move(self, game, state):
@@ -30,9 +34,6 @@ class EmptyPlayer(BasePlayer):
     def update(self, game, state, reward):
         pass
 
-    def __str__(self):
-        return 'I do nothing'
-
 class RandomPlayer(BasePlayer):
     def move(self, game, state):
         return game.sample()
@@ -40,25 +41,18 @@ class RandomPlayer(BasePlayer):
     def update(self, game, state, reward):
         pass
 
-    def __str__(self):
-        return 'I make random moves'
-
 class HumanPlayer(BasePlayer):
+    def __init__(self,display=True):
+        super().__init__(self, display)
+        
     def move(self, game, state):
-        print(game)
         return int(input())
 
     def update(self, game, state, reward):
         if reward != 0:
             print('Human player received a reward',reward)
 
-    def __str__(self):
-        return 'I am a human player'
-
-class ProceduralPlayer(BasePlayer):    
-    def __init__(self):
-        pass
-    
+class ProceduralPlayer(BasePlayer):
     def move(self, game, state):
         move = self.winning_move(game)
         if move != 0:
@@ -92,9 +86,6 @@ class ProceduralPlayer(BasePlayer):
         
     def update(self, board, state, reward):
         pass
-    
-    def __str__(self):
-        return 'Pretty good procedural player'
     
 class Game:
     def __init__(self, x_player = EmptyPlayer(), o_player = EmptyPlayer()):
@@ -168,13 +159,18 @@ class Game:
             state = self.state(player)
             winner = 0
             try:
-                m = player.move(self,state)
-                if self.move(m,player):
+                p_row_col = player.move(self,state)
+                game_over = self.move(p_row_col,player)
+                if player.display:
+                    print(self)
+                if game_over:
                     player.update(self,state,1)
                     opponent.update(self,state,-1)
                     winner = player.n
                     break
             except ValueError:
+                if player.display:
+                    print('=== ILLEGAL MOVE ===================')
                 player.update(self,state,-10)
                 winner = -player.n
                 break
@@ -183,7 +179,9 @@ class Game:
         self.o_player.record_outcome(winner)
 
     def __str__(self):
-        s = '------------------------------------------\n'
+        s = '\n---( '
+        s += str(self.moves)
+        s += ' )--------------------------\n'
         for i in range(3):
             for j in range(3):
                 if self.board[i][j] == 1:
@@ -191,8 +189,8 @@ class Game:
                 elif self.board[i][j] == -1:
                     s += 'O'
                 else:
-                    s += '-'
-                s += '  '
+                    s += str(int(i*3+j))
+                s += '   '
             s += '\n\n'
         s += 'x state = '
         s += str(self.state(self.x_player))
