@@ -1,6 +1,7 @@
 import numpy as np
 
 class BasePlayer:
+    
     def __init__(self, display=False):
         self.display = display
         self.reset_metrics()
@@ -28,6 +29,10 @@ class BasePlayer:
         return self.__class__.__name__ + ' w/l/t=' + str(self.wins) + '/' + str(self.losses) + '/' + str(self.ties)       
 
 class EmptyPlayer(BasePlayer):
+    
+    def __init__(self,display=False):
+        super().__init__(display)
+        
     def move(self, game, state):
         pass
 
@@ -35,6 +40,10 @@ class EmptyPlayer(BasePlayer):
         pass
 
 class RandomPlayer(BasePlayer):
+    
+    def __init__(self,display=False):
+        super().__init__(display)
+        
     def move(self, game, state):
         return game.sample()
 
@@ -42,8 +51,9 @@ class RandomPlayer(BasePlayer):
         pass
 
 class HumanPlayer(BasePlayer):
+    
     def __init__(self,display=True):
-        super().__init__(self, display)
+        super().__init__(display)
         
     def move(self, game, state):
         return int(input())
@@ -53,6 +63,10 @@ class HumanPlayer(BasePlayer):
             print('Human player received a reward',reward)
 
 class ProceduralPlayer(BasePlayer):
+    
+    def __init__(self,display=False):
+        super().__init__(display)
+    
     def move(self, game, state):
         move = self.winning_move(game)
         if move != 0:
@@ -69,7 +83,7 @@ class ProceduralPlayer(BasePlayer):
                     game.board[row][col] = self.n
                     max_min = game.max_min()
                     game.board[row][col] = 0
-                    if max_min[0] == self.n * 3:
+                    if max_min[0] == self.n * 3 or max_min[1] == self.n * 3:
                         return row * 3 + col
         return 0
 
@@ -80,15 +94,17 @@ class ProceduralPlayer(BasePlayer):
                     game.board[row][col] = -self.n
                     max_min = game.max_min()
                     game.board[row][col] = 0
-                    if max_min[1] == -self.n * 3:
+                    if max_min[0] == -self.n * 3 or max_min[1] == -self.n * 3:
                         return row * 3 + col
         return 0
         
     def update(self, board, state, reward):
         pass
     
+    
 class Game:
-    def __init__(self, x_player = EmptyPlayer(), o_player = EmptyPlayer()):
+    
+    def __init__(self, x_player, o_player):
         self.x_player = x_player
         self.o_player = o_player
         self.i = 0
@@ -100,6 +116,7 @@ class Game:
         self.x_turn = True     
         self.x_player.reset() 
         self.o_player.reset()
+        self.states = []
 
     # returns the max and min of sum of each axis + each diagonal
     def max_min(self):
@@ -146,6 +163,12 @@ class Game:
             for col in range(3):
                 i += (n * self.board[row][col] + 1) * (3 ** (row*3+col))
         return int(i)
+        
+    def construct_board(state):
+        for row in range(3):
+            for col in range(3):
+                exponent = row * 3 + col
+                
 
     def play(self):
         self.reset()
@@ -157,6 +180,7 @@ class Game:
             player = self.x_player if self.x_turn else self.o_player
             opponent = self.o_player if self.x_turn else self.x_player
             state = self.state(player)
+            self.states.append(self.state(self.x_player))
             winner = 0
             try:
                 p_row_col = player.move(self,state)
@@ -177,21 +201,30 @@ class Game:
             self.x_turn = not self.x_turn
         self.x_player.record_outcome(winner)
         self.o_player.record_outcome(winner)
+        return winner
 
-    def __str__(self):
-        s = '\n---( '
-        s += str(self.moves)
-        s += ' )--------------------------\n'
+    def replay(self):
+        print(self.states)
+
+    def draw(board):
+        s = ''
         for i in range(3):
             for j in range(3):
-                if self.board[i][j] == 1:
+                if board[i][j] == 1:
                     s += 'X'
-                elif self.board[i][j] == -1:
+                elif board[i][j] == -1:
                     s += 'O'
                 else:
                     s += str(int(i*3+j))
                 s += '   '
             s += '\n\n'
+        return s
+    
+    def __str__(self):
+        s = '\n---( '
+        s += str(self.moves)
+        s += ' )--------------------------\n'
+        s += Game.draw(self.board)
         s += 'x state = '
         s += str(self.state(self.x_player))
         s += ', o state = '
