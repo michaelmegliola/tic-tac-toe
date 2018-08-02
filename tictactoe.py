@@ -69,10 +69,10 @@ class ProceduralPlayer(BasePlayer):
     
     def move(self, game, state):
         move = self.winning_move(game)
-        if move != 0:
+        if move != -1:
             return move
         move = self.block_opponent(game)
-        if move != 0:
+        if move != -1:
             return move
         return game.sample()
 
@@ -85,7 +85,7 @@ class ProceduralPlayer(BasePlayer):
                     game.board[row][col] = 0
                     if max_min[0] == self.n * 3 or max_min[1] == self.n * 3:
                         return row * 3 + col
-        return 0
+        return -1
 
     def block_opponent(self, game):
         for row in range(3):
@@ -96,7 +96,7 @@ class ProceduralPlayer(BasePlayer):
                     game.board[row][col] = 0
                     if max_min[0] == -self.n * 3 or max_min[1] == -self.n * 3:
                         return row * 3 + col
-        return 0
+        return -1
         
     def update(self, board, state, reward):
         pass
@@ -104,7 +104,7 @@ class ProceduralPlayer(BasePlayer):
     
 class Game:
     
-    def __init__(self, x_player, o_player):
+    def __init__(self, x_player=EmptyPlayer(), o_player=EmptyPlayer()):
         self.x_player = x_player
         self.o_player = o_player
         self.i = 0
@@ -156,12 +156,12 @@ class Game:
             if self.board[row][col] == 0:
                 return row * 3 + col
 
-    def state(self, player):
+    def state(self, player, board):
         i = 0
         n = 1 if player is self.x_player else -1
         for row in range(3):
             for col in range(3):
-                i += (n * self.board[row][col] + 1) * (3 ** (row*3+col))
+                i += (n * board[row][col] + 1) * (3 ** (row*3+col))
         return int(i)
         
     def construct_board(state):
@@ -182,12 +182,12 @@ class Game:
         while self.moves < 9:
             player = self.x_player if self.x_turn else self.o_player
             opponent = self.o_player if self.x_turn else self.x_player
-            state = self.state(player)
+            state = self.state(player, self.board)
             winner = 0
             try:
                 p_row_col = player.move(self,state)
                 game_over = self.move(p_row_col,player)
-                self.states.append(self.state(self.x_player))
+                self.states.append(self.state(self.x_player, self.board))
                 if player.display:
                     print(self)
                 if game_over:
@@ -251,7 +251,7 @@ class Game:
         s += ' )--------------------------\n\n'
         s += Game.draw(self.board)
         s += 'x state = '
-        s += str(self.state(self.x_player))
+        s += str(self.state(self.x_player, self.board))
         s += ', o state = '
-        s += str(self.state(self.o_player))
+        s += str(self.state(self.o_player, self.board))
         return s
