@@ -111,7 +111,7 @@ class Game:
         self.reset()
         
     def reset(self):
-        self.board = np.zeros([3,3])
+        self.board = np.zeros((3,3))
         self.moves = 0
         self.x_turn = True     
         self.x_player.reset() 
@@ -165,10 +165,13 @@ class Game:
         return int(i)
         
     def construct_board(state):
-        for row in range(3):
-            for col in range(3):
-                exponent = row * 3 + col
-                
+        board = np.zeros((3,3))
+        for row in range(2,-1,-1):
+            for col in range(2,-1,-1):
+                exp = 3 ** (row*3+col)
+                board[row][col] = state // exp - 1
+                state = state % exp
+        return board        
 
     def play(self):
         self.reset()
@@ -180,11 +183,11 @@ class Game:
             player = self.x_player if self.x_turn else self.o_player
             opponent = self.o_player if self.x_turn else self.x_player
             state = self.state(player)
-            self.states.append(self.state(self.x_player))
             winner = 0
             try:
                 p_row_col = player.move(self,state)
                 game_over = self.move(p_row_col,player)
+                self.states.append(self.state(self.x_player))
                 if player.display:
                     print(self)
                 if game_over:
@@ -204,26 +207,48 @@ class Game:
         return winner
 
     def replay(self):
+        print('=== REPLAY =========================')
         print(self.states)
+        i = 0
+        for state in self.states:
+            i += 1
+            print('===( ' + str(i) + ' )============================\n')
+            print(Game.draw(Game.construct_board(state)))
+        print('\n')
 
     def draw(board):
         s = ''
         for i in range(3):
-            for j in range(3):
-                if board[i][j] == 1:
-                    s += 'X'
-                elif board[i][j] == -1:
-                    s += 'O'
-                else:
-                    s += str(int(i*3+j))
-                s += '   '
-            s += '\n\n'
+            for line in range(3):
+                for j in range(3):
+                    if board[i][j] == 1:
+                        if line == 0:
+                            s += '\\ /'
+                        elif line == 1:
+                            s += ' X '
+                        else:
+                            s += '/ \\'
+                    elif board[i][j] == -1:
+                        if line == 0:
+                            s += 'OOO'
+                        elif line == 1:
+                            s += 'O O'
+                        else:
+                            s += 'OOO'
+                    else:
+                        if line == 1:
+                            s += ' ' + str(int(i*3+j)) + ' '
+                        else:
+                            s += '   '
+                    s += '   '
+                s += '\n'
+            s += '\n'
         return s
     
     def __str__(self):
         s = '\n---( '
         s += str(self.moves)
-        s += ' )--------------------------\n'
+        s += ' )--------------------------\n\n'
         s += Game.draw(self.board)
         s += 'x state = '
         s += str(self.state(self.x_player))
