@@ -2,8 +2,7 @@ import numpy as np
 
 class BasePlayer:
     
-    def __init__(self, display=False):
-        self.display = display
+    def __init__(self):
         self.reset_metrics()
     
     def set_n(self,n):
@@ -30,8 +29,8 @@ class BasePlayer:
 
 class EmptyPlayer(BasePlayer):
     
-    def __init__(self,display=False):
-        super().__init__(display)
+    def __init__(self):
+        super().__init__()
         
     def move(self, game, state):
         pass
@@ -41,8 +40,8 @@ class EmptyPlayer(BasePlayer):
 
 class RandomPlayer(BasePlayer):
     
-    def __init__(self,display=False):
-        super().__init__(display)
+    def __init__(self):
+        super().__init__()
         
     def move(self, game, state):
         return game.sample()
@@ -52,8 +51,8 @@ class RandomPlayer(BasePlayer):
 
 class HumanPlayer(BasePlayer):
     
-    def __init__(self,display=True):
-        super().__init__(display)
+    def __init__(self):
+        super().__init__()
         
     def move(self, game, state):
         return int(input())
@@ -64,8 +63,8 @@ class HumanPlayer(BasePlayer):
 
 class PrettyGoodPlayer(BasePlayer):
     
-    def __init__(self,display=False):
-        super().__init__(display)
+    def __init__(self):
+        super().__init__()
     
     def move(self, game, state):
         move = self.winning_move(game)
@@ -102,12 +101,38 @@ class PrettyGoodPlayer(BasePlayer):
         pass
 
 class VeryGoodPlayer(PrettyGoodPlayer):
-    def __init__(self,display=False):
-        super().__init__(display)
+    def __init__(self):
+        super().__init__()
     
     def move(self, game, state):
-        pretty_good_move = super().move(game, state)
-        return pretty_good_move
+        move = self.winning_move(game)
+        if move != -1:
+            return move
+        move = self.block_opponent(game)
+        if move != -1:
+            return move
+        move = self.double_winner(game.board,self.n)
+        if move != -1:
+            return move
+        move = self.double_winner(game.board,-self.n)
+        if move != -1:
+            return move
+        return game.sample()
+    
+    def double_winner(self, board, n):
+        for row in range(3):
+            for col in range(3):
+                if board[row][col] == 0:
+                    board[row][col] = n
+                    w_col = [1 for x in np.sum(board,0) if x == n*2]
+                    w_row = [1 for x in np.sum(board,1) if x == n*2]
+                    winners = int(np.sum(w_col) + np.sum(w_row))        
+                    winners += (1 if board.trace(0) == n*2 else 0)
+                    winners += 1 if np.flip(board,0).trace(0) == n*2 else 0
+                    board[row][col] = 0
+                    if winners > 1:
+                        return row * 3 + col
+        return -1
     
 class Game:
     
@@ -195,8 +220,6 @@ class Game:
                 p_row_col = player.move(self,state)
                 game_over = self.move(p_row_col,player)
                 self.states.append(self.state(self.x_player, self.board))
-                if player.display:
-                    print(self)
                 if game_over:
                     player.update(self,state,1)
                     opponent.update(self,state,-1)
@@ -214,12 +237,12 @@ class Game:
         return winner
 
     def replay(self):
-        print('=== REPLAY =========================')
+        print('=== REPLAY =================================')
         print(self.states)
         i = 0
         for state in self.states:
             i += 1
-            print('===( ' + str(i) + ' )============================\n')
+            print('===( ' + str(i) + ' [ state=' + str(state) + ' ] )=====================\n')
             print(Game.draw(Game.construct_board(state)))
         print('\n')
 
