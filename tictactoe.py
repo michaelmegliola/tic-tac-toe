@@ -62,7 +62,7 @@ class HumanPlayer(BasePlayer):
         if reward != 0:
             print('Human player received a reward',reward)
 
-class ProceduralPlayer(BasePlayer):
+class PrettyGoodPlayer(BasePlayer):
     
     def __init__(self,display=False):
         super().__init__(display)
@@ -100,7 +100,14 @@ class ProceduralPlayer(BasePlayer):
         
     def update(self, board, state, reward):
         pass
+
+class VeryGoodPlayer(PrettyGoodPlayer):
+    def __init__(self,display=False):
+        super().__init__(display)
     
+    def move(self, game, state):
+        pretty_good_move = super().move(game, state)
+        return pretty_good_move
     
 class Game:
     
