@@ -55,6 +55,7 @@ class HumanPlayer(BasePlayer):
         super().__init__()
         
     def move(self, game, state):
+        print(game)
         return int(input())
 
     def update(self, game, state, reward):
@@ -139,6 +140,8 @@ class Game:
     def __init__(self, x_player=EmptyPlayer(), o_player=EmptyPlayer()):
         self.x_player = x_player
         self.o_player = o_player
+        self.x_player.set_n(1)      
+        self.o_player.set_n(-1)
         self.i = 0
         self.reset()
         
@@ -207,9 +210,7 @@ class Game:
 
     def play(self):
         self.reset()
-        self.i+=1       
-        self.x_player.set_n(1)      
-        self.o_player.set_n(-1)
+        self.i+=1
 
         while self.moves < 9:
             player = self.x_player if self.x_turn else self.o_player
@@ -235,6 +236,9 @@ class Game:
         self.x_player.record_outcome(winner)
         self.o_player.record_outcome(winner)
         return winner
+    
+    def game_over(self):
+        return np.max(np.absolute(self.max_min())) == 3 or self.i >= 9
 
     def replay(self):
         print('=== REPLAY =================================')
