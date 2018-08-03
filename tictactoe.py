@@ -135,9 +135,6 @@ class VeryGoodPlayer(PrettyGoodPlayer):
                         return row * 3 + col
         return -1
 
-from tictactoe import *
-
-# here is an empty Minimax player
 class MinimaxPlayer(BasePlayer):
     
     # return a valid move (0..9, equal to [row * 3 + col] )
