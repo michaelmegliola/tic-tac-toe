@@ -134,9 +134,73 @@ class VeryGoodPlayer(PrettyGoodPlayer):
                     if winners > 1:
                         return row * 3 + col
         return -1
+
+from tictactoe import *
+
+# here is an empty Minimax player
+class MinimaxPlayer(BasePlayer):
     
-class Game:
+    # return a valid move (0..9, equal to [row * 3 + col] )
+    def move(self, game, state):
+        best_row = -1
+        best_col = -1
+        best_score = -100
+        for row in range(3):
+            for col in range(3):
+                if game.board[row][col] == 0:
+                    game.board[row][col] = self.n
+                    score = self.minimax(game,False)
+                    game.board[row][col] = 0
+                    if score > best_score:
+                        best_score = score
+                        best_row = row
+                        best_col = col
+        return best_row * 3 + best_col
+
+    # receive feedback from most recent move
+    def update(self, game, state, reward):
+        if reward == -1:
+            print('Inconceivable!')  # how did we manage to lose, having examined every outcome?
     
+    # check if the board is full (implying that the game is over)
+    def board_is_full(self, board):
+        for row in range(3):
+            for col in range(3):
+                if board[row][col] == 0:
+                    return False
+        return True
+    
+    # do the work first described by Jon Von Neumann in 1928
+    def minimax(self, game, isMe):    
+        
+        # first, check for terminal conditions...
+        scores = game.max_min()
+        if scores[0] == 3:
+            return scores[0] * self.n       # 'x' wins...
+        elif scores[1] == -3:
+            return scores[1] * self.n       # 'o' wins...
+        if self.board_is_full(game.board):
+            return 0                        # ...and a tie is also a terminal condition.
+        
+        if isMe:
+            best = -4
+            for row in range(3):
+                for col in range(3):
+                    if game.board[row][col] == 0:
+                        game.board[row][col] = self.n
+                        best = max(best, self.minimax(game, not isMe))
+                        game.board[row][col] = 0
+        else:
+            best = 4
+            for row in range(3):
+                for col in range(3):
+                    if game.board[row][col] == 0:
+                        game.board[row][col] = -self.n
+                        best = min(best, self.minimax(game, not isMe))
+                        game.board[row][col] = 0
+        return best    
+    
+class Game:   
     def __init__(self, x_player=EmptyPlayer(), o_player=EmptyPlayer()):
         self.x_player = x_player
         self.o_player = o_player
