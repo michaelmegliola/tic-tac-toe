@@ -158,6 +158,7 @@ class MinimaxPlayer(BasePlayer):
     def update(self, game, state, reward):
         if reward == -1:
             print('Inconceivable!')  # how did we manage to lose, having examined every outcome?
+            game.replay()
     
     # check if the board is full (implying that the game is over)
     def board_is_full(self, board):
@@ -195,8 +196,8 @@ class MinimaxPlayer(BasePlayer):
                         game.board[row][col] = -self.n
                         best = min(best, self.minimax(game, not isMe))
                         game.board[row][col] = 0
-        return best    
-    
+        return best 
+          
 class Game:   
     def __init__(self, x_player=EmptyPlayer(), o_player=EmptyPlayer()):
         self.x_player = x_player
@@ -208,10 +209,10 @@ class Game:
         
     def reset(self):
         self.board = np.zeros((3,3))
-        self.moves = 0
         self.x_turn = True     
         self.x_player.reset() 
         self.o_player.reset()
+        self.moves = 0
         self.states = []
 
     # returns the max and min of sum of each axis + each diagonal
@@ -272,35 +273,29 @@ class Game:
     def play(self):
         self.reset()
         self.i+=1
-
-        while self.moves < 9:
+        while self.moves < 9:   
             player = self.x_player if self.x_turn else self.o_player
-            opponent = self.o_player if self.x_turn else self.x_player
+            opponent = self.x_player if not self.x_turn else self.o_player
             state = self.state(player, self.board)
-            winner = 0
-            try:
-                p_row_col = player.move(self,state)
-                game_over = self.move(p_row_col,player)
-                self.states.append(self.state(self.x_player, self.board))
-                if game_over:
-                    player.update(self,state,1)
-                    opponent.update(self,state,-1)
-                    winner = player.n
-                    break
-            except ValueError:
-                if player.display:
-                    print('=== ILLEGAL MOVE ===================')
-                player.update(self,state,-10)
-                winner = -player.n
+            p_row_col = player.move(self,state)
+            player_wins = self.move(p_row_col,player)
+            self.states.append(self.state(self.x_player, self.board)) # supports instant replay
+            if player_wins:
+                player.update(self,state,1)
+                opponent.update(self,state,-1)
                 break
             self.x_turn = not self.x_turn
-        self.x_player.record_outcome(winner)
-        self.o_player.record_outcome(winner)
-        return winner
+        if player_wins:
+            self.x_player.record_outcome(player.n)
+            self.o_player.record_outcome(player.n)
+        else:
+            self.x_player.record_outcome(0)
+            self.o_player.record_outcome(0)           
+        return player.n
     
     def game_over(self):
         return np.max(np.absolute(self.max_min())) == 3 or self.i >= 9
-
+   
     def replay(self):
         print('=== REPLAY =================================')
         print(self.states)
