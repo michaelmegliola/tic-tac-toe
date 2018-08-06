@@ -246,12 +246,19 @@ class Game:
     # return a random legal move (do not call if all 9 squares are taken!)
     def sample(self):
         if self.moves == 9:
-            raise ValueError('cannot sample; board is full')
+            raise ValueError('cannot sample randomly; board is full')
         while True:
             row = np.random.randint(3)  # 0,1,2
             col = np.random.randint(3)
             if self.board[row][col] == 0:
                 return row * 3 + col
+    
+    def sequential(self):
+        for row in range(3):
+            for col in range(3):
+                if self.board[row][col] == 0:
+                    return row * 3 + col
+        raise ValueError('cannot sample sequentially; board is full')
 
     def state(self, player, board):
         i = 0
@@ -278,12 +285,19 @@ class Game:
             opponent = self.x_player if not self.x_turn else self.o_player
             state = self.state(player, self.board)
             p_row_col = player.move(self,state)
-            player_wins = self.move(p_row_col,player)
+            try:
+                player_wins = self.move(p_row_col,player)
+            except ValueError:
+                player.update(self,state,-100)
+                break
             self.states.append(self.state(self.x_player, self.board)) # supports instant replay
             if player_wins:
                 player.update(self,state,1)
                 opponent.update(self,state,-1)
                 break
+            else:
+                player.update(self,state,0)
+                opponent.update(self,state,0)
             self.x_turn = not self.x_turn
         if player_wins:
             self.x_player.record_outcome(player.n)
